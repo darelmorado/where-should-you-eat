@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Where should I eat? Free food for UCLA students</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f4f8fb; --surface:#ffffff; --text:#14212e; --muted:#4a5b6b; --line:#d3dee8;
+  --blue:#1d5f94; --blue-ink:#ffffff; --gold:#ffd100; --gold-ink:#14212e;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0e1822; --surface:#16242f; --text:#e8eef4; --muted:#a9b8c6; --line:#2a3b4a;
+    --blue:#7db8ea; --blue-ink:#0e1822; --gold:#ffd100; --gold-ink:#14212e;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0e1822; --surface:#16242f; --text:#e8eef4; --muted:#a9b8c6; --line:#2a3b4a;
+  --blue:#7db8ea; --blue-ink:#0e1822; --gold:#ffd100; --gold-ink:#14212e;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.5;font-size:17px}
+main{max-width:640px;margin:0 auto;padding:28px 18px 48px}
+h1{font-size:clamp(2rem,9vw,2.9rem);line-height:1.05;margin:0 0 8px;letter-spacing:-.02em}
+.sub{color:var(--muted);margin:0 0 22px;max-width:46ch}
+.days{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:22px}
+.days button{font:inherit;font-weight:700;padding:10px 0;border:2px solid var(--line);background:var(--surface);color:var(--text);border-radius:10px;cursor:pointer;position:relative;min-height:44px}
+.days button[aria-pressed="true"]{background:var(--blue);border-color:var(--blue);color:var(--blue-ink)}
+.days button.today::after{content:"";position:absolute;top:5px;right:5px;width:8px;height:8px;border-radius:50%;background:var(--gold);border:1px solid var(--gold-ink)}
+button:focus-visible,a:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+h2{font-size:1.15rem;margin:0 0 4px}
+.day-note{color:var(--muted);margin:0 0 14px;font-size:.95rem}
+.item{display:grid;grid-template-columns:96px 1fr;gap:14px;padding:16px 0;border-top:1px solid var(--line)}
+.time{font-weight:700;font-size:1.05rem;line-height:1.25;color:var(--blue)}
+.name{font-weight:700;font-size:1.1rem;margin:0 0 2px}
+.where{margin:0 0 6px;color:var(--muted)}
+.notes{margin:0 0 8px}
+.links a{color:var(--blue);font-weight:700;margin-right:14px}
+.cal{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap}
+.cal a,.cal button{font:inherit;font-weight:700;font-size:.9rem;padding:8px 12px;min-height:40px;border:2px solid var(--blue);border-radius:8px;background:transparent;color:var(--blue);cursor:pointer;text-decoration:none}
+.badge{display:inline-block;background:var(--gold);color:var(--gold-ink);font-weight:700;font-size:.85rem;padding:2px 8px;border-radius:6px;margin-bottom:6px}
+.empty{padding:16px;border:2px dashed var(--line);border-radius:12px;color:var(--muted)}
+section.any{margin-top:34px}
+.any .item{grid-template-columns:1fr}
+footer{margin-top:36px;padding-top:16px;border-top:1px solid var(--line);color:var(--muted);font-size:.92rem}
+@media (max-width:420px){.item{grid-template-columns:1fr;gap:4px}}
+</style>
+</head>
+<body>
+<main>
+  <h1>Where should I eat?</h1>
+  <p class="sub">Free and low-cost food for UCLA students, by day of the week.</p>
+  <div class="days" id="days" role="group" aria-label="Choose a day"></div>
+  <h2 id="dayTitle"></h2>
+  <p class="day-note" id="dayNote"></p>
+  <div id="list" aria-live="polite"></div>
+  <section class="any">
+    <h2>Any day</h2>
+    <p class="day-note">Options that don’t depend on the schedule.</p>
+    <div id="anytime"></div>
+  </section>
+  <footer>
+    Put together from student experience in November 2026. Schedules change, so check the linked page before you go. More spots are coming. Know one that’s missing? Tell whoever shared this link with you.
+  </footer>
+</main>
+<script>
+const DAYS=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+const FULL=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+
+// To add a resource, add one object here. days: 0=Sun ... 6=Sat.
+const SCHEDULED=[
+  {name:"UCLA Bruin Dine",days:[2,3,4],when:"10 pm (line starts 9:30)",where:"Student Activity Center, lowest floor",
+   notes:"Bring your own tupperware.",links:[["Instagram","https://www.instagram.com/uclabruindine"]],cal:{start:"2200",end:"2300"}},
+  {name:"Cafe 580 lunch",days:[2,4],when:"11 am to 2 pm",where:"St. Alban’s Church (the meal is held at a church)",
+   notes:"Instant meals to take home are also available.",links:[["GroupMe","https://groupme.com/join_group/23204017/qNFmQ8HH"]],cal:{start:"1100",end:"1400"}},
+  {name:"Basic Needs Center mobile market",days:[3],when:"Every other Wednesday",where:"Usually the multipurpose room at Tipuana Apartments (Strathmore)",
+   notes:"Bring your phone. You usually sign in with UCLA Logon.",links:[["Instagram","https://www.instagram.com/bnatstrath"]]},
+  {name:"CPO Harvest distribution",days:[4],when:"2 to 5 pm",where:"Student Activity Center, pool deck",
+   notes:"Not every week, so check Instagram for dates. Check in with UCLA Logon. The CPO also runs a food pantry.",links:[["Instagram","https://www.instagram.com/ucla_cpo"]]},
+  {name:"Upside Down cafe",days:[1,2,3,4,5],when:"Weekdays (check hours)",where:"10962 Le Conte Ave, Westwood Village",
+   notes:"Pay-what-you-want coffee, matcha, and a study space. It is run by Jews for Jesus, a Christian group, and it hosts religious events.",links:[]}
+];
+const ANYTIME=[
+  {name:"UCLA emergency meal swipes",where:"Apply online",
+   notes:"Covers up to 3 quarters. Students report that people living outside the dorms are usually approved. The official page has the actual rules.",links:[["Official page","https://studentincrisis.ucla.edu/emergency-meal"]]},
+  {name:"Student swipe exchange",where:"Dining halls, Facebook, Reddit",
+   notes:"Unofficial. Students sell swipes to each other, typically for about $10. Check UCLA’s dining rules first, and meet in public places. The website isn’t very active yet.",links:[["Swipe exchange site","https://uclaswipeexchange.com"]]}
+];
+
+const today=new Date().getDay();
+let selected=today;
+
+function linksHtml(ls){
+  return ls.length?'<div class="links">'+ls.map(([t,u])=>`<a href="${u}" target="_blank" rel="noopener noreferrer">${t}</a>`).join("")+"</div>":"";
+}
+// Only weekly, dependable items get a cal field. Irregular ones (every other week, etc.) are left out on purpose.
+const BYDAY=["SU","MO","TU","WE","TH","FR","SA"];
+function ymd(d){return d.getFullYear()+String(d.getMonth()+1).padStart(2,"0")+String(d.getDate()).padStart(2,"0");}
+function calInfo(r){
+  const d=new Date();
+  while(!r.days.includes(d.getDay()))d.setDate(d.getDate()+1);
+  const day=ymd(d);
+  return {s:day+"T"+r.cal.start+"00",e:day+"T"+r.cal.end+"00",rule:"FREQ=WEEKLY;BYDAY="+r.days.map(x=>BYDAY[x]).join(",")};
+}
+function calHtml(r){
+  if(!r.cal)return "";
+  const c=calInfo(r);
+  const g="https://calendar.google.com/calendar/render?action=TEMPLATE&text="+encodeURIComponent(r.name)+"&dates="+c.s+"/"+c.e+"&recur="+encodeURIComponent("RRULE:"+c.rule)+"&location="+encodeURIComponent(r.where)+"&details="+encodeURIComponent(r.notes+" Check the linked page to confirm before you go.");
+  return `<div class="cal"><a href="${g}" target="_blank" rel="noopener noreferrer">Add to Google Calendar</a><button type="button" data-ics="${encodeURIComponent(r.name)}">Apple/Other (.ics)</button></div>`;
+}
+document.addEventListener("click",e=>{
+  const b=e.target.closest("button[data-ics]");if(!b)return;
+  const r=SCHEDULED.find(x=>x.name===decodeURIComponent(b.dataset.ics));if(!r)return;
+  const c=calInfo(r);
+  const t=s=>s.replace(/[,;]/g,m=>"\\"+m);
+  const ics=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Where should I eat//EN","BEGIN:VEVENT","UID:"+Date.now()+"@where-should-i-eat","DTSTAMP:"+new Date().toISOString().replace(/[-:]/g,"").slice(0,15)+"Z","DTSTART:"+c.s,"DTEND:"+c.e,"RRULE:"+c.rule,"SUMMARY:"+t(r.name),"LOCATION:"+t(r.where),"DESCRIPTION:"+t(r.notes+" Check the linked page to confirm before you go."),"END:VEVENT","END:VCALENDAR"].join("\r\n");
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([ics],{type:"text/calendar"}));a.download=r.name.replace(/\W+/g,"-")+".ics";document.body.appendChild(a);a.click();a.remove();
+});
+function item(r,showTime){
+  return `<div class="item">${showTime?`<div class="time">${r.when}</div>`:""}<div>
+    <p class="name">${r.name}</p><p class="where">${r.where}</p><p class="notes">${r.notes}</p>${linksHtml(r.links)}${calHtml(r)}</div></div>`;
+}
+function render(){
+  document.querySelectorAll("#days button").forEach(b=>b.setAttribute("aria-pressed",String(+b.dataset.d===selected)));
+  const rows=SCHEDULED.filter(r=>r.days.includes(selected));
+  document.getElementById("dayTitle").textContent=selected===today?"Today, "+FULL[selected]:FULL[selected];
+  document.getElementById("dayNote").textContent=rows.length?rows.length+(rows.length===1?" place":" places")+" on this day":"";
+  document.getElementById("list").innerHTML=rows.length?rows.map(r=>item(r,true)).join(""):
+    `<div class="empty">Nothing is scheduled on ${FULL[selected]}. Try another day, or see the “Any day” options below.</div>`;
+}
+const dayBar=document.getElementById("days");
+DAYS.forEach((d,i)=>{
+  const b=document.createElement("button");
+  b.textContent=d;b.dataset.d=i;b.type="button";
+  b.setAttribute("aria-label",FULL[i]+(i===today?" (today)":""));
+  if(i===today)b.classList.add("today");
+  b.onclick=()=>{selected=i;render();};
+  dayBar.appendChild(b);
+});
+document.getElementById("anytime").innerHTML=ANYTIME.map(r=>item(r,false)).join("");
+render();
+</script>
+</body>
+</html>
